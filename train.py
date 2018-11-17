@@ -3,6 +3,7 @@
 # 15th Nov. 2018
 
 import models
+import data_manipulation
 
 from keras.callbacks import ModelCheckpoint
 
@@ -13,8 +14,9 @@ CHKPT_DIR = "checkpoints"
 NUM_EPOCHS = 30
 NUM_BATCH_SIZE = 32
 
-I_KERNEL_SIZES = [3, 5] #TODO change as necessary
-M_KERNEL_SIZE = 3 #TODO Change as necessary
+I_KERNEL_SIZES = [3, 5] #PARAM
+M_KERNEL_SIZE = 3 #PARAM
+INPUT_SHAPE = (256, 1) # length, channels PARAM
 
 def train(chk_path, model_name, model, train_x, train_y, val_x, val_y):
     model.compile(optimizer='adam',
@@ -32,7 +34,7 @@ def train_segnet(train_x, train_y, val_x, val_y):
     for kernel_size in I_KERNEL_SIZES:
         seg_chkpth_filepath = os.path.join(CHKPT_DIR,
                                            "segnet-weights-"+str(kernel_size)+"-improvement-{epoch:02d}-{val_loss:.2f}.hdf5")
-        segnet = models.create_seg_net(num_classes=2,
+        segnet = models.create_seg_net(num_classes=2, input_shape=INPUT_SHAPE,
                                        init_kernel_size=kernel_size,
                                        mid_kernel_size=M_KERNEL_SIZE,
                                        init_num_filters=32)
@@ -47,3 +49,7 @@ def train_unet(train_x, train_y, val_x, val_y):
                                   mid_kernel_size=M_KERNEL_SIZE,
                                   init_num_filters=32) #TODO
         train(unet_chkpth_filepath, "unet-"+str(kernel_size), unet, train_x, train_y, val_x, val_y)
+
+def main():
+    
+    train_segnet(train_x, train_y, val_x, val_y)
