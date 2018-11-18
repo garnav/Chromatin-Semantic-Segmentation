@@ -148,7 +148,9 @@ def create_data_split(file_path, bins_per_sample, train_split=0.8, val_split=0.1
 		print("Creating Testing Set ... ")
 		test_x, test_y = vectorize_data(test_set)
 
-	return (train_x, train_y, val_x, val_y, test_x, test_y)
+	return (train_x - mean(train_x), train_y,
+	        val_x - mean(val_x), val_y,
+			test_x, test_y)
 
 ''' Returns X, Y where X[i] is the ith datapoint (num_samples, seq. length, 1)
 					   Y[i] is a one hot representation for the ith label (num_samples, seq. length, 1)
