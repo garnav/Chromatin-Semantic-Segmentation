@@ -16,7 +16,7 @@ BASES = ["A", "C", "G", "T"]
 NUM_CLASSES = 2 #O-IDX : -, 1-IDX: +
 
 #FILENAMES
-DATA_DIR = os.path.join("..", "data")
+DATA_DIR = "data"
 PROCESSED_DATA = os.path.join(DATA_DIR, "processed_data.pickle")
 
 '''Reads the fasta file and outputs the sequence to analyze.

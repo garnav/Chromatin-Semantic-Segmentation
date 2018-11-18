@@ -7,6 +7,7 @@ import data_manipulation
 
 from keras.callbacks import ModelCheckpoint
 from keras.models import model_from_json
+from keras import backend as K
 import numpy as np
 import os
 import tensorflow as tf
@@ -20,7 +21,7 @@ SEGNET_JSON = "segnet-17.json"
 NUM_EPOCHS = 30
 NUM_BATCH_SIZE = 32
 
-I_KERNEL_SIZES = [3, 5] #PARAM
+I_KERNEL_SIZES = [3] #PARAM
 M_KERNEL_SIZE = 3 #PARAM
 INPUT_SHAPE = (64, 1) # length, channels PARAM
 
@@ -54,7 +55,7 @@ def train_unet(train_x, train_y, val_x, val_y):
         unet = models.create_unet(num_classes=2,
                                   init_kernel_size=kernel_size,
                                   mid_kernel_size=M_KERNEL_SIZE,
-                                  init_num_filters=32) #TODO
+                                  init_num_filters=4) #TODO
         train(unet_chkpth_filepath, "unet-"+str(kernel_size), unet, train_x, train_y, val_x, val_y)
 
 def write_model(model, name):
@@ -68,7 +69,7 @@ def test_model():
         loaded_model_json = json_file.read()
 
     loaded_model = model_from_json(loaded_model_json)
-    loaded_model.load_weights("segnet-5_final.h5")
+    loaded_model.load_weights("segnet-3_final.h5")
 
     return loaded_model
 
@@ -91,7 +92,7 @@ def check_gradients(loaded_model):
 
     sess = tf.InteractiveSession()
     sess.run(tf.initialize_all_variables())
-    evaluate_gradients = sess.run(gradients, feed_dict={model.input:val_x[0:1, :, :]})
+    evaluate_gradients = sess.run(gradients, feed_dict={loaded_model.input:val_x[0:1, :, :]})
 
     return evaluate_gradients
 
@@ -100,7 +101,7 @@ def main():
     train_y = np.load(os.path.join(DATA_DIR, "train_y.npy"))
     val_x = np.load(os.path.join(DATA_DIR, "val_x.npy"))
     val_y = np.load(os.path.join(DATA_DIR, "val_y.npy"))
-    train_segnet(train_x, train_y, val_x, val_y)
+    train_segnet(train_x[0:3000, ], train_y[:3000, ], val_x, val_y)
 
 if __name__ == '__main__':
     main()

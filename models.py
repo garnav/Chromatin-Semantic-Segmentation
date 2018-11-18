@@ -3,7 +3,7 @@
 # 15th Nov. 2018
 
 from keras import backend as K
-from keras.layers import Conv1D, MaxPooling1D, UpSampling1D, Activation, Reshape, Input
+from keras.layers import Conv1D, MaxPooling1D, UpSampling1D, Activation, Reshape, Input, Permute
 from keras.models import Sequential, Model
 from keras.activations import softmax
 
@@ -44,7 +44,7 @@ def create_seg_net(num_classes, input_shape, init_kernel_size, mid_kernel_size, 
     # Reshape in prep for softmax
     model_width = model.output_shape[-2]
     model.add(Reshape((num_classes, model_width)))
-
+    model.add(Permute((2, 1)))
     # Softmax --> for each chennel (which corr. to each input)
     model.add(Activation('softmax'))
     model.add(Reshape((model_width, num_classes)))
