@@ -9,6 +9,7 @@ from keras.callbacks import ModelCheckpoint
 from keras.models import model_from_json
 import numpy as np
 import os
+import tensorflow as tf
 
 # ------- DIRECTORIES ------- #
 CHKPT_DIR = "checkpoints"
@@ -76,6 +77,23 @@ def load_datasets():
     val_y = np.load(os.path.join(DATA_DIR, "val_y.npy"))
 
     return val_x, val_y
+
+def check_gradients(loaded_model):
+    val_x, val_y = load_datasets()
+    #loaded_model = test_model()
+
+    loaded_model.compile(optimizer='adam',
+                         loss='categorical_crossentropy',
+                         metrics=['accuracy'])
+    out = loaded_model.output
+    lstVar = loaded_model.trainable_weights
+    gradients = K.gradients(out, lstVar)
+
+    sess = tf.InteractiveSession()
+    sess.run(tf.initialize_all_variables())
+    evaluate_gradients = sess.run(gradients, feed_dict={model.input:val_x[0:1, :, :]})
+
+    return evaluate_gradients
 
 def main():
     train_x = np.load(os.path.join(DATA_DIR, "train_x.npy"))
