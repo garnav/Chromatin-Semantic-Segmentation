@@ -5,8 +5,8 @@
 import models
 import data_manipulation
 
-
 from keras.callbacks import ModelCheckpoint
+import numpy as np
 import os
 
 # ------- DIRECTORIES ------- #
@@ -54,8 +54,11 @@ def train_unet(train_x, train_y, val_x, val_y):
         train(unet_chkpth_filepath, "unet-"+str(kernel_size), unet, train_x, train_y, val_x, val_y)
 
 def main():
-    train_x = np.load(os.path.join(DATA_DIR, "train_x"))
-    train_y = np.load(os.path.join(DATA_DIR, "train_y"))
-    val_x = np.load(os.path.join(DATA_DIR, "val_x"))
-    val_y = np.load(os.path.join(DATA_DIR, "val_y"))
+    train_x = np.load(os.path.join(DATA_DIR, "train_x.npy"))
+    train_y = np.load(os.path.join(DATA_DIR, "train_y.npy"))
+    val_x = np.load(os.path.join(DATA_DIR, "val_x.npy"))
+    val_y = np.load(os.path.join(DATA_DIR, "val_y.npy"))
     train_segnet(train_x, train_y, val_x, val_y)
+
+if __name__ == '__main__':
+    main()
