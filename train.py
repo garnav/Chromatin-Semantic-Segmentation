@@ -6,12 +6,14 @@ import models
 import data_manipulation
 
 from keras.callbacks import ModelCheckpoint
+from keras.models import model_from_json
 import numpy as np
 import os
 
 # ------- DIRECTORIES ------- #
 CHKPT_DIR = "checkpoints"
 DATA_DIR = "data"
+SEGNET_JSON = "segnet-17.json"
 
 # ------- CONSTANTS ------- #
 NUM_EPOCHS = 30
@@ -19,7 +21,7 @@ NUM_BATCH_SIZE = 32
 
 I_KERNEL_SIZES = [3, 5] #PARAM
 M_KERNEL_SIZE = 3 #PARAM
-INPUT_SHAPE = (256, 1) # length, channels PARAM
+INPUT_SHAPE = (64, 1) # length, channels PARAM
 
 def train(chk_path, model_name, model, train_x, train_y, val_x, val_y):
     model.compile(optimizer='adam',
@@ -41,6 +43,7 @@ def train_segnet(train_x, train_y, val_x, val_y):
                                        init_kernel_size=kernel_size,
                                        mid_kernel_size=M_KERNEL_SIZE,
                                        init_num_filters=32)
+        write_model(segnet, SEGNET_JSON)
         train(seg_chkpth_filepath, "segnet-"+str(kernel_size), segnet, train_x, train_y, val_x, val_y)
 
 def train_unet(train_x, train_y, val_x, val_y):
@@ -52,6 +55,27 @@ def train_unet(train_x, train_y, val_x, val_y):
                                   mid_kernel_size=M_KERNEL_SIZE,
                                   init_num_filters=32) #TODO
         train(unet_chkpth_filepath, "unet-"+str(kernel_size), unet, train_x, train_y, val_x, val_y)
+
+def write_model(model, name):
+    model_json = model.to_json()
+    with open(name, "w") as json_file:
+        json_file.write(model_json)
+
+#### DEBUGGING ####
+def test_model():
+    with open(SEGNET_JSON, 'r') as json_file:
+        loaded_model_json = json_file.read()
+
+    loaded_model = model_from_json(loaded_model_json)
+    loaded_model.load_weights("segnet-5_final.h5")
+
+    return loaded_model
+
+def load_datasets():
+    val_x = np.load(os.path.join(DATA_DIR, "val_x.npy"))
+    val_y = np.load(os.path.join(DATA_DIR, "val_y.npy"))
+
+    return val_x, val_y
 
 def main():
     train_x = np.load(os.path.join(DATA_DIR, "train_x.npy"))
