@@ -11,7 +11,7 @@ import os
 
 # ------- DIRECTORIES ------- #
 CHKPT_DIR = "checkpoints"
-DATA_DIR = os.path.join("..", "data")
+DATA_DIR = "data"
 
 # ------- CONSTANTS ------- #
 NUM_EPOCHS = 30
@@ -24,7 +24,7 @@ INPUT_SHAPE = (256, 1) # length, channels PARAM
 def train(chk_path, model_name, model, train_x, train_y, val_x, val_y):
     model.compile(optimizer='adam',
                   loss='categorical_crossentropy',
-                  metrics=['accuracy']))
+                  metrics=['accuracy'])
 
     checkpoint = ModelCheckpoint(chk_path, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     model.fit(train_x, train_y, batch_size=NUM_BATCH_SIZE, epochs=NUM_EPOCHS,
@@ -55,7 +55,7 @@ def train_unet(train_x, train_y, val_x, val_y):
 
 def main():
     train_x = np.load(os.path.join(DATA_DIR, "train_x"))
-	train_y = np.load(os.path.join(DATA_DIR, "train_y"))
-	val_x = np.load(os.path.join(DATA_DIR, "val_x"))
-	val_y = np.load(os.path.join(DATA_DIR, "val_y"))
+    train_y = np.load(os.path.join(DATA_DIR, "train_y"))
+    val_x = np.load(os.path.join(DATA_DIR, "val_x"))
+    val_y = np.load(os.path.join(DATA_DIR, "val_y"))
     train_segnet(train_x, train_y, val_x, val_y)
