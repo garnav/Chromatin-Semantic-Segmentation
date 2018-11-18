@@ -71,3 +71,4 @@ def create_seg_net(num_classes, input_shape, init_kernel_size, mid_kernel_size, 
 
 # def create_seg_net(num_classes, input_shape, init_kernel_size, mid_kernel_size, init_num_filters):
 #     #TODO
+# Added BN
