@@ -5,3 +5,8 @@ __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# large training files
+training_history
+final_weights
+data

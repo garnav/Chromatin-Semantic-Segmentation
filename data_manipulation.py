@@ -1,4 +1,4 @@
-                                                                   # data_manipulation.py
+# data_manipulation.py
 # 11th Nov. 2018
 # Arnav Ghosh
 
@@ -13,10 +13,11 @@ NEGATIVE = "-"
 REV_CLASS_MAP = [NEGATIVE, POSITIVE]
 
 BASES = ["A", "C", "G", "T"]
-NUM_CLASSES = 2 #O-IDX : -, 1-IDX: +
+NUM_CLASSES = 10 #O-IDX : -, 1-IDX: +
+DIM = 10
 
 #FILENAMES
-DATA_DIR = os.path.join("..", "data")
+DATA_DIR = os.path.join("data")
 PROCESSED_DATA = os.path.join(DATA_DIR, "processed_data.pickle")
 
 '''Reads the fasta file and outputs the sequence to analyze.
@@ -142,26 +143,22 @@ def create_data_split(file_path, bins_per_sample, train_split=0.8, val_split=0.1
 
 		# TODO Not using actual base info in chromosome
 		print("Creating Training Set ... ")
-		train_x, train_y = vectorize_data(train_set)
+		train_x, train_y = vectorize_data(train_set, DIM)
+		#return([train_set[0]])
 		print("Creating Validation Set ... ")
-		val_x, val_y = vectorize_data(val_set)
+		val_x, val_y = vectorize_data(val_set, DIM)
 		print("Creating Testing Set ... ")
-		test_x, test_y = vectorize_data(test_set)
+		test_x, test_y = vectorize_data(test_set, DIM)
 
-	return (train_x - mean(train_x), train_y,
-	        val_x - mean(val_x), val_y,
+	return (train_x - np.mean(train_x), train_y,
+	        val_x - np.mean(val_x), val_y,
 			test_x, test_y)
 
-''' Returns X, Y where X[i] is the ith datapoint (num_samples, seq. length, 1)
-					   Y[i] is a one hot representation for the ith label (num_samples, seq. length, 1)
-
-	data: list of list of bins where each inner list forms a bin sequence
-		  eg: [ ["chr1 0  24 + 10", "chr1 25 49 - 13"], -- forms --> X : [10, 13], Y [[0, 1], [1,0]]
-		  		["chr1 50 74 + 17", "chr1 75 99 + 6"] ] '''
-def vectorize_data(data):
+def vectorize_data(data, dim):
 	num_samples = len(data)
 	bins_per_sample = len(data[0]) #should be uniform
-	X = np.zeros((num_samples, bins_per_sample, 1))
+	#print(bins_per_sample)
+	X = np.zeros((num_samples, bins_per_sample, dim))
 	Y = np.zeros((num_samples, bins_per_sample, NUM_CLASSES))
 
 	for i, seq in enumerate(data):
@@ -171,13 +168,19 @@ def vectorize_data(data):
 		#assert len(seq) == bins_per_sample #ensure the sequence length is consistent
 		#print(seq)
 		else:
-			X[i, ] = np.array(list(map(lambda x : int(x.split(',')[4]), seq))).reshape(-1, 1)
-			Y[i, ] = np.array(list(map(lambda x : [0, 1] if x.split(',')[3] == POSITIVE else [1, 0], seq))) #assuming 2 classes
+			conv_lst = np.array(list(map(lambda x : list(map(lambda y : int(y.strip()), x.split())), seq)))
+			#print(conv_lst.shape)
+
+			X[i, ] = conv_lst[:, :-1]
+			y = np.zeros((bins_per_sample, NUM_CLASSES))
+			#print(conv_lst[:, -1] - 1)
+			y[range(bins_per_sample), conv_lst[:, -1] - 1] = 1
+			Y[i, ] = y
 
 	return X, Y
 
 def store_data(file_path):
-	train_x, train_y, val_x, val_y, test_x, test_y = create_data_split(file_path, 64, train_split=0.8, val_split=0.1, test_split=0.1)
+	train_x, train_y, val_x, val_y, test_x, test_y = create_data_split(file_path, 16, train_split=0.8, val_split=0.1, test_split=0.1)
 	np.save(os.path.join(DATA_DIR, "train_x"), train_x)
 	np.save(os.path.join(DATA_DIR, "train_y"), train_y)
 	np.save(os.path.join(DATA_DIR, "val_x"), val_x)
@@ -187,3 +190,85 @@ def store_data(file_path):
 
 # TODO: Use Chr Base Summaries
 # def vectorize_aug_data(data):
+# wgEncodeBroadHmmK562HMM.txt
+
+# using 200bp
+def normalize_base_pairs(file_path, new_file_path):
+	with open(file_path, 'r') as oldFile:
+		with open(new_file_path, 'w') as newFile:
+			for line in oldFile:
+				line = line.strip().split()
+				diff_bp = int(line[2]) - int(line[1])
+				prev_base = line[1]
+				for i in range(int(diff_bp / 200)):
+					new_line = line
+					new_line[1] = prev_base
+					new_line[2] = str(int(prev_base) + 200)
+					newFile.write(" ".join(new_line) + "\n")
+					prev_base = str(int(prev_base) + 200)
+
+def combine_data_labels(data_file_path, class_file_path):
+	with open("chromHmm_data_labels_generated.bed", 'w') as outFile:
+		with open(data_file_path, 'r') as data:
+			print(data.readline()) #ignore header lines
+			print(data.readline()) #ignore header lines
+			with open(class_file_path, 'r') as label_data:
+		 		# use shorter Set
+				for line in label_data:
+					x_data = data.readline().strip().split()
+					full_label = line.split()[3]
+					# old data
+					# label = full_label[:full_label.find('_')]
+					# new data --> generated via ChromHMM
+					label = full_label[full_label.find('E') + 1 : ].strip()
+					data_label = x_data + [label]
+					outFile.write(" ".join(data_label) + '\n')
+
+def augment_data_labels(data_path, base_pair_file, fasta):
+	with open("chromHmm_data_labels_augmented.bed", 'w') as out_file:
+		with open(base_pair_file, 'r') as base_file:
+			with open(data_path, 'r') as data_file:
+				for line in data_file:
+					line = line.strip().split()
+					bp_line = base_file.readline().strip().split()
+					#print(bp_line)
+					start_bp = int(bp_line[1])
+					end_bp = int(bp_line[2])
+
+					base_counts = count_bases(fasta[start_bp : end_bp])
+					full_label = bp_line[3]
+					label = full_label[full_label.find('E') + 1 : ].strip()
+
+					if base_counts is not None:
+						new_line = line + base_counts + [label]
+						#print(new_line)
+						out_file.write(" ".join(new_line) + '\n')
+
+def count_bases(fasta):
+	num_A = 0
+	num_C = 0
+	num_G = 0
+	num_T = 0
+
+	for base in fasta:
+		#print(repr(base))
+		if base == 'N':
+			return None
+
+		if base == 'A':
+			#print("base")
+			num_A += 1
+		elif base == 'C':
+			num_C += 1
+		elif base == 'G':
+			num_G += 1
+		elif base == 'T':
+			num_T += 1
+
+	return [str(num_A), str(num_C), str(num_G), str(num_T)]
+
+def main():
+	store_data("data/chromHmm_data_labels_generated.bed")
+
+if __name__ == '__main__':
+	main()
